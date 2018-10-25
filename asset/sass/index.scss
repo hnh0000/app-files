@@ -1,0 +1,101 @@
+// 主颜色
+$color: #3C3C3C;
+$color2: #fff;
+$color3: #000;
+$color4: #000;
+$bannedColor: #E6E6E6;
+
+.left {
+  float: left;
+}
+
+.right {
+  float: right;
+}
+
+.middle {
+  float: left;
+}
+
+.weui-cell:before {
+  right: 15px;
+}
+
+.weui-cells:after {
+  left: 15px;
+  right: 15px;
+}
+
+.click {
+  cursor: pointer;
+  &:active {
+    position: relative;
+    top: 2px;
+  }
+}
+
+.banned {
+  cursor: not-allowed;
+  color: $bannedColor;
+  &.click:active {
+    position: relative;
+    top: 0;
+  }
+}
+
+.text-color {
+  color: $color;
+}
+
+.text-color2 {
+  color: $color2;
+}
+
+// 首页
+body#index {
+  header {
+    background: $color;
+    height: 50px;
+    width: 100%;
+    text-align: center;
+    line-height: 50px;
+    .left {
+      width: 15%;
+    }
+    .middle {
+      padding-top: 7px;
+      line-height: normal;
+      width: 70%;
+      color: $color2;
+      line-height: normal;
+      text-align: left;
+      h2 {
+        font-size: 16px;
+      }
+      p {
+        font-size: 8px;
+      }
+    }
+    .right {
+      width: 15%;
+    }
+  }
+
+  section {
+    .weui-cells {
+      margin-top: 0;
+    }
+  }
+
+  footer {
+    box-shadow: 0px 1px 11px 2px rgba(42, 42, 42, 0.1);
+    background: $color2;
+    height: 40px;
+    line-height: 40px;
+    width: 100%;
+    position: fixed;
+    bottom: 0px;
+    left: 0px;
+    text-align: center;
+  }
+}
