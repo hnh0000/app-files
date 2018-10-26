@@ -3,35 +3,113 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,initial-scale=1.0,width=device-width"/>
+    <meta name="viewport"
+          content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,initial-scale=1.0,width=device-width"/>
     <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
-    <title>index</title>
-    <link rel="stylesheet" type="text/css" href="./css/api.css"/>
+    <title>app</title>
+    <link rel="stylesheet" href="./lib/a-ui/css/aui.2.0.css">
+    <link rel="stylesheet" href="./lib/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="./css/base.css">
     <style type="text/css">
+        .aui-bar-nav {
+            background: #3C3C3C;
+            background: #000;
+            line-height: 2.5rem;
+            min-height: 2.5rem;
+        }
+
+        .aui-bar-nav .aui-title {
+            text-align: left;
+            right: 2.5rem;
+            left: 2.5rem;
+            padding-top: 0.4rem;
+        }
+
+        .aui-title h2 {
+            font-weight: 700;
+            line-height: normal;
+            font-size: 0.85rem;
+        }
+
+        .aui-title .info {
+            line-height: normal;
+            font-size: 0.4rem;
+        }
+
+        .aui-bar-nav .left {
+            width: 2.5rem;
+            height: 2.5rem;
+        }
+
+        .aui-bar-nav .right {
+            width: 2.5rem;
+            height: 2.5rem;
+        }
+
+        footer {
+            box-shadow: 0px 1px 11px 2px rgba(42, 42, 42, 0.1);
+            background: #fff;
+            overflow: hidden;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            line-height: 2rem;
+            height: 2rem;
+        }
+
+        footer > div {
+            float: left;
+            width: 25%;
+        }
+
+        footer > div > i.fa {
+            font-size: 0.7rem;
+        }
     </style>
 </head>
 
-<body class="wrap">
-<header>首页</header>
-<section class="flex-1">
-</section>
-<footer>Copyright &copy;<span id="year"></span>QQ1123416584</footer>
+<body class="aui-content">
+<header class="aui-bar aui-bar-nav" id="header">
+    <a class="left">
+        <i class="fa fa-align-justify text-color2"></i>
+    </a>
+    <div class="aui-title">
+        <h2 class="aui-ellipsis-1 text-color2">
+            /storage/emulated</h2>
+        <p class="info text-color2">文件夹：<span>228</span> &nbsp;&nbsp;文件：<span>13</span> &nbsp;&nbsp;储存：<span>47.50G/110.27G</span>
+        </p>
+    </div>
+    <a class="right">
+        <i class="fa fa-ellipsis-v text-color2"></i>
+    </a>
+</header>
+
+<footer id="footer">
+    <div class="click banned">
+        <i class="fa fa-arrow-left"></i>
+    </div>
+    <div class="click">
+        <i class="fa fa-arrow-right"></i>
+    </div>
+    <div class="click">
+        <i class="fa fa-plus"></i>
+    </div>
+    <div class="click">
+        <i class="fa fa-arrow-up"></i>
+    </div>
+</footer>
 </body>
 
 <script type="text/javascript" src="./script/api.js"></script>
-<script type="text/javascript">
-    apiready = function() {
-        var fs = api.require('fs');
-        fs.readDir({
-            path: '/storage/emulated/0/'
-        }, function(ret, err) {
-            if (ret.status) {
-                alert(JSON.stringify(ret));
-            } else {
-                alert(JSON.stringify(err));
-            }
-        });
-    }
-</script>
+<script src="./lib/a-ui/script/aui-tab.js"></script>
+<script src="./script/common.js"></script>
+<script !src="">
+    apiready = function () {
+        fnReady();
 
+        fnReadyFrame('html/root_frame');
+    };
+</script>
 </html>

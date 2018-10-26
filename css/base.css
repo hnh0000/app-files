@@ -1,0 +1,45 @@
+/*Begin 公用*/
+body {
+    font-family: -apple-system-font, Helvetica Neue, sans-serif;
+    height: 100%;
+    width: 100%;
+}
+
+/*主配色1*/
+.text-color {
+    color: #3C3C3C;
+}
+
+/*主配色2*/
+.text-color2 {
+    color: #fff;
+}
+
+.left {
+    float: left;
+}
+
+.right {
+    float: right;
+}
+
+.click {
+    cursor: pointer;
+}
+
+.click:active {
+    position: relative;
+    top: 2px;
+}
+
+.banned {
+    cursor: not-allowed;
+    color: #E6E6E6;
+}
+
+.banned.click:active {
+    position: relative;
+    top: 0;
+}
+
+/*End 公用*/

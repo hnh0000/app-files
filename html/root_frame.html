@@ -1,0 +1,208 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport"
+          content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,initial-scale=1.0,width=device-width"/>
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>app</title>
+    <link rel="stylesheet" href=".././lib/a-ui/css/aui.2.0.css">
+    <link rel="stylesheet" href=".././lib/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href=".././css/base.css">
+    <style type="text/css">
+
+    </style>
+</head>
+
+<body class="aui-content">
+<div class="aui-content aui-margin-b-15">
+    <ul class="aui-list aui-media-list aui-list-in" id="file-list">
+        <li class="aui-list-item aui-list-item-middle" onclick="file.goto('../')">
+            <div class="aui-media-list-item-inner">
+                <div class="aui-list-item-media" style="width: 2rem;">
+                    <i class="fa fa-folder text-color" style="font-size: 1rem;"></i>
+                </div>
+                <div class="aui-list-item-inner aui-list-item-arrow">
+                    <div class="aui-list-item-text">
+                        <div class="aui-list-item-title aui-font-size-14">..</div>
+                    </div>
+                    <div class="aui-list-item-text">
+                    </div>
+                </div>
+            </div>
+        </li>
+    </ul>
+</div>
+</body>
+<script id="file-tmpl" type="text/x-dot-template">
+    {{for (var k in it) { }}
+    <li class="aui-list-item aui-list-item-middle file-item" onclick="file.goto('{{= k}}')">
+        <div class="aui-media-list-item-inner  {{? it[k].html.icon=='folder'}} aui-list-item-arrow {{?}}">
+            <div class="aui-list-item-media" style="width: 2rem;">
+                <i sty class="fa  fa-{{= it[k].html.icon}}  text-color" style="font-size: 1rem;"></i>
+            </div>
+            <div class="aui-list-item-inner">
+                <div class="aui-list-item-text">
+                    <div class="aui-list-item-title aui-font-size-14">{{= k}}</div>
+                </div>
+                <div class="aui-list-item-text">
+                </div>
+            </div>
+        </div>
+    </li>
+    {{ } }}
+</script>
+
+<script type="text/javascript" src=".././script/api.js"></script>
+<script src=".././lib/a-ui/script/aui-dialog.js"></script>
+<script src=".././lib/a-ui/script/aui-toast.js"></script>
+<script src=".././script/common.js"></script>
+<script src=".././lib/doT.min.js"></script>
+<script !src="">
+    apiready = function () {
+        file.init();
+    };
+
+
+    var dialog = new auiDialog({});
+    var toast = new auiToast({});
+
+    var file = {
+        fs: false,
+        // 根目录
+        root: '/storage/emulated/0/',
+        // 当前路径
+        currentPatch: '/storage/emulated/0/',
+        // 模板ID
+        tempId: 'file-tmpl',
+        // 展示列表的父级ID
+        showBoxId: 'file-list',
+        // 当前目录下的所有文件(不包括属性)
+        allFileName: {},
+        // 当前已查出的属性的文件
+        allFile: {},
+
+        // 初始化执行
+        init: function () {
+            if (this.fs) return false;
+            this.fs = api.require('fs');
+            this.setList();
+        },
+
+        // 设置文件夹列表展示
+        setList: function () {
+            var data = this.readDir(true);
+            if (data === false) return false;
+
+            var fileDot = doT.template(document.getElementById(this.tempId).innerHTML);
+            document.getElementById(this.showBoxId).innerHTML += fileDot(data);
+        },
+
+        /**
+         * 获取路径下所有的文件数据
+         * @param sync 是否为同步执行，默认false
+         * @param path 获取指定路径下的，默认当前路径.
+         **/
+        readDir: function (sync, path) {
+            var fs = this.fs,
+                path = path ? path : this.currentPatch;
+            if (sync) {
+                var ret = fs.readDirSync({
+                    path: path
+                });
+                if (ret.status) {
+                    var data = ret.data;
+                    this.allFileName = data;
+                    return this.getAttribute(true, data);
+                } else {
+                    toast.fail({
+                        title: "获取列表失败," + ret.msg,
+                        duration: 2000
+                    });
+                    return false;
+                }
+            } else {
+                fs.readDir({
+                    path: path
+                }, function (ret, err) {
+                    if (ret.status) {
+                        alert(JSON.stringify(ret.data));
+                    } else {
+                        alert(JSON.stringify(err));
+                    }
+                });
+            }
+        },
+        // 点击文件
+        goto: function (name) {
+            if (this.isDir(name)) {
+                this.skip(this.getPath(name));
+            } else {
+                alert('文件');
+            }
+        },
+        // 跳转路径
+        skip: function (path) {
+            this.currentPatch = path + '/';
+            var el = $api.domAll('.file-item');
+            for (var i = 0; i < el.length; i++) {
+                $api.remove(el[i]);
+            }
+            this.setList();
+        },
+        /**
+         * 获取文件属性
+         * @param sync 是否同步，默认false
+         * @param path 文件路径
+         */
+        getAttribute: function (sync, path) {
+            var fs = this.fs;
+            if (sync) {
+                var file = {};
+                for (var i = 0; i < 10; i++) {
+                    var name = path[i];
+                    var ret = fs.getAttributeSync({
+                        path: this.getPath(name)
+                    });
+                    if (ret.status) {
+                        file[name] = this.addHtmlAttribute(ret.attribute);
+                    }
+                }
+                Object.assign(this.allFile, file);
+                return file;
+            } else {
+            }
+        },
+        // 拼接路径
+        getPath: function (relativePath, absolutePath) {
+            absolutePath = absolutePath ? absolutePath : this.currentPatch;
+            if (relativePath == '..' || relativePath == '../') {
+                var n = absolutePath.lastIndexOf('/');
+                if (n == (absolutePath.length - 1)) {
+                    absolutePath = absolutePath.slice(0, -1);
+                    n = absolutePath.lastIndexOf('/');
+                }
+                var path = absolutePath.slice(0, n);
+            }else{
+                var path = absolutePath + relativePath;
+            }
+            return path;
+        },
+        // 是否为目录(只检测当前目录下已经查看属性的文件)
+        isDir: function (name) {
+            var info = this.allFile[name];
+            return (info && info.type == 'folder') || name == '../' || name == '..';
+        },
+        // 追加html用的属性
+        addHtmlAttribute: function (file) {
+            var icon = file.type == 'folder' ? 'folder' : 'file';
+            file['html'] = {
+                'icon': icon
+            };
+            return file;
+        }
+    };
+
+</script>
+</html>
