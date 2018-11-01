@@ -78,7 +78,8 @@
     <div class="aui-title">
         <h2 class="aui-ellipsis-1 text-color2">
             /storage/emulated</h2>
-        <p class="info text-color2">文件夹：<span>228</span> &nbsp;&nbsp;文件：<span>13</span> &nbsp;&nbsp;储存：<span>47.50G/110.27G</span>
+        <p class="info text-color2">文件：<span id="file-count">NaN</span>&nbsp; &nbsp;&nbsp;储存：<span
+                id="size">NaN/NaN</span>
         </p>
     </div>
     <a class="right">
@@ -93,7 +94,7 @@
     <div class="click">
         <i class="fa fa-arrow-right"></i>
     </div>
-    <div class="click">
+    <div class="click" onclick="create()">
         <i class="fa fa-plus"></i>
     </div>
     <div class="click">
@@ -108,8 +109,60 @@
 <script !src="">
     apiready = function () {
         fnReady();
+        fnKeyback();
+        fnChangeFileSo();
 
         fnReadyFrame('html/root_frame');
     };
+
+    // 返回键
+    function fnKeyback() {
+        var keyback = false;
+
+        api.addEventListener({
+            name: 'keyback'
+        }, function (ret, err) {
+            // 发送自定义返回事件
+            api.sendEvent({name: 'myKeyback'})
+        });
+    }
+
+    //新增
+    function create() {
+        api.prompt({
+            buttons: ['文件', '取消', '文件夹']
+        }, function (ret, err) {
+            var index = ret.buttonIndex;
+            var text = ret.text;
+            var jsfun = '';
+            switch (index) {
+                case 1:
+                    jsfun = 'file.createFile';
+                    break;
+                case 2:
+                    return false;
+                    break;
+                case 3:
+                    jsfun = 'file.createFolder';
+                    break;
+            }
+            jsfun += '("' + text + '")';
+            api.execScript({
+                name: 'root',
+                frameName: 'html/root_frame',
+                script: jsfun
+            });
+        });
+    }
+
+    // 监听更改文件
+    function fnChangeFileSo() {
+        api.addEventListener({
+            name: 'myChangeFile'
+        }, function (ret, err) {
+            $api.dom('#file-count').innerHTML = ret.value.fileCount;
+            $api.dom('#size').innerHTML = ret.value.have + '/' + ret.value.sum;
+        });
+    }
 </script>
 </html>

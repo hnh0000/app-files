@@ -62,14 +62,51 @@
 <script !src="">
     apiready = function () {
         file.init();
-
-        var keyback = false;
-        api.addEventListener({
-            name: 'keyback'
-        }, function(ret, err) {
-            alert('按了返回键');
-        });
+        fnKeyback();
     };
+
+    // 修改url处理
+    function fnChangeFileSo() {
+        api.getTotalSpace(function (ret, err) {
+            var sum = ret.size;
+            api.getFreeDiskSpace(function (ret, err) {
+                var have = sum - ret.size;
+                api.sendEvent({
+                    name: 'myChangeFile',
+                    extra: {
+                        sum: bytesToSize(sum),
+                        have: bytesToSize(have),
+                        fileCount: file.fileCount,
+                    }
+                });
+            })
+        });
+    }
+
+    // 通过win发送自定义事件 myKeyback
+    function fnKeyback() {
+        var keyback = false;
+
+        api.addEventListener({
+            name: 'myKeyback'
+        }, function (ret, err) {
+            if (file.parentPatch) {
+                file.click('../');
+                return true;
+            }
+            keyback = !keyback;
+            if (keyback) {
+                api.toast({
+                    msg: '双击退出'
+                });
+                setTimeout(function () {
+                    keyback = false;
+                }, 1500)
+            } else {
+                api.closeWidget();
+            }
+        });
+    }
 
 
     var toast = new auiToast({});
@@ -86,18 +123,58 @@
         tempId: 'file-tmpl',
         // 展示列表的父级ID
         showBoxId: 'file-list',
+        // 文件数量
+        fileCount: null,
 
         // 初始化执行
         init: function () {
-            api.showProgress({
-                title: '努力加载中...',
-                text: '',
-                modal: true
-            });
+            showProgress();
             if (this.fs) return false;
             this.fs = api.require('fs');
             this.setList();
-            api.hideProgress();
+            hideProgress();
+        },
+
+        // 创建文件
+        createFile: function (name) {
+            var fs = this.fs;
+            var path = this.getPath(name);
+            var that = this;
+            fs.createFile({
+                path: path,
+            }, function (ret, err) {
+                if (ret.status) {
+                    var data = {};
+                    data[name] = that.addHtmlAttribute({}, 'file');
+                    that.dot(data);
+                } else {
+                    toast.fail({
+                        title: '创建失败',
+                        duration: 2000
+                    });
+                }
+            });
+        },
+
+        // 创建文件夹
+        createFolder: function (name) {
+            var fs = this.fs;
+            var path = this.getPath(name);
+            var that = this;
+            fs.createDir({
+                path: path,
+            }, function (ret, err) {
+                if (ret.status) {
+                    var data = {};
+                    data[name] = that.addHtmlAttribute({}, 'folder');
+                    that.dot(data);
+                } else {
+                    toast.fail({
+                        title: '创建失败',
+                        duration: 2000
+                    });
+                }
+            });
         },
 
         // 设置父级目录链接
@@ -120,7 +197,12 @@
         setList: function () {
             var data = this.readDir(true);
             if (data === false) return false;
+            this.dot(data);
+            fnChangeFileSo();
+        },
 
+        // 渲染js
+        dot: function (data) {
             var fileDot = doT.template(document.getElementById(this.tempId).innerHTML);
             document.getElementById(this.showBoxId).innerHTML += fileDot(data);
         },
@@ -139,6 +221,7 @@
                 });
                 if (ret.status) {
                     var data = ret.data;
+                    this.fileCount = data.length;
                     return this.getAttribute(true, data);
                 } else {
                     toast.fail({
@@ -164,11 +247,6 @@
             var path = this.getPath(name);
             var type = this.isDir(path);
             if (type) {
-                api.showProgress({
-                    title: '努力加载中...',
-                    text: '',
-                    modal: true
-                });
                 this.goto(path);
             } else if (type === false) {
                 alert('文件');
@@ -178,7 +256,8 @@
         },
         // 进入文件夹
         goto: function (path) {
-            this.currentPatch = path+'/';
+            showProgress();
+            this.currentPatch = path + '/';
             this.setParentPath();
 
             var el = $api.domAll('.file-item');
@@ -186,7 +265,7 @@
                 $api.remove(el[i]);
             }
             this.setList();
-            api.hideProgress();
+            hideProgress();
         },
         /**
          * 获取文件属性|异步追加剩下的文件夹
@@ -237,8 +316,12 @@
             }
         },
         // 追加html用的属性
-        addHtmlAttribute: function (file) {
-            var icon = file.type == 'folder' ? 'folder' : 'file';
+        addHtmlAttribute: function (file, is) {
+            if (is === undefined) {
+                var icon = file.type == 'folder' ? 'folder' : 'file';
+            } else {
+                var icon = is;
+            }
             file['html'] = {
                 'icon': icon
             };

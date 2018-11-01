@@ -77,8 +77,8 @@ function fnReadyFooter() {
 };
 
 // 打开当前窗口对应的Frame
-function fnReadyFrame(winName) {
-    var frameName = winName?winName:(api.winName + '_frame');
+function fnReadyFrame(frameName) {
+    frameName = frameName?frameName:(api.winName + '_frame');
     api.openFrame({
         name: frameName,
         url: './' + frameName + '.html',
@@ -93,3 +93,25 @@ function fnReadyFrame(winName) {
         pageParam: api.pageParam
     });
 };
+
+// api进度弹窗
+window.apiProgress = false;
+function showProgress($par)
+{
+    $par = $par?$par:{title: '努力加载中...', text:'', modal: true};
+    api.showProgress($par);
+    apiProgress = true;
+}
+function hideProgress()
+{
+    api.hideProgress();
+    apiProgress = false;
+}
+
+function bytesToSize(bytes) {
+    if (bytes === 0) return '0 B';
+    var k = 1024;
+    sizes = ['B','KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.floor((bytes / Math.pow(k, i)) * 100) / 100   + ' ' + sizes[i];
+}
