@@ -6,7 +6,7 @@ function fnReady() {
     fnReadyFooter();
 };
 
-// 监听返回键以及类为event-back的元素点击都会closeWin
+// 类为event-back的元素点击都会closeWin
 function fnReadyKeyback() {
     var keybacks = $api.domAll('.event-back');
     for (var i = 0; i < keybacks.length; i++) {

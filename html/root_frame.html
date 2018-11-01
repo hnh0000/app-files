@@ -7,7 +7,7 @@
           content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,initial-scale=1.0,width=device-width"/>
     <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
     <title>app</title>
-    <link rel="stylesheet" href=".././lib/a-ui/css/aui.2.0.css">
+    <link rel="stylesheet" href=".././lib/a-ui/css/aui.css">
     <link rel="stylesheet" href=".././lib/font-awesome/css/font-awesome.min.css">
     <link rel="stylesheet" href=".././css/base.css">
     <style type="text/css">
@@ -18,7 +18,7 @@
 <body class="aui-content">
 <div class="aui-content aui-margin-b-15">
     <ul class="aui-list aui-media-list aui-list-in" id="file-list">
-        <li class="aui-list-item aui-list-item-middle" onclick="file.goto('../')">
+        <li class="aui-list-item aui-list-item-middle" onclick="file.click('../')">
             <div class="aui-media-list-item-inner">
                 <div class="aui-list-item-media" style="width: 2rem;">
                     <i class="fa fa-folder text-color" style="font-size: 1rem;"></i>
@@ -37,7 +37,7 @@
 </body>
 <script id="file-tmpl" type="text/x-dot-template">
     {{for (var k in it) { }}
-    <li class="aui-list-item aui-list-item-middle file-item" onclick="file.goto('{{= k}}')">
+    <li class="aui-list-item aui-list-item-middle file-item" onclick="file.click('{{= k}}')">
         <div class="aui-media-list-item-inner  {{? it[k].html.icon=='folder'}} aui-list-item-arrow {{?}}">
             <div class="aui-list-item-media" style="width: 2rem;">
                 <i sty class="fa  fa-{{= it[k].html.icon}}  text-color" style="font-size: 1rem;"></i>
@@ -62,10 +62,16 @@
 <script !src="">
     apiready = function () {
         file.init();
+
+        var keyback = false;
+        api.addEventListener({
+            name: 'keyback'
+        }, function(ret, err) {
+            alert('按了返回键');
+        });
     };
 
 
-    var dialog = new auiDialog({});
     var toast = new auiToast({});
 
     var file = {
@@ -74,20 +80,40 @@
         root: '/storage/emulated/0/',
         // 当前路径
         currentPatch: '/storage/emulated/0/',
+        // 父级目录
+        parentPatch: null,
         // 模板ID
         tempId: 'file-tmpl',
         // 展示列表的父级ID
         showBoxId: 'file-list',
-        // 当前目录下的所有文件(不包括属性)
-        allFileName: {},
-        // 当前已查出的属性的文件
-        allFile: {},
 
         // 初始化执行
         init: function () {
+            api.showProgress({
+                title: '努力加载中...',
+                text: '',
+                modal: true
+            });
             if (this.fs) return false;
             this.fs = api.require('fs');
             this.setList();
+            api.hideProgress();
+        },
+
+        // 设置父级目录链接
+        setParentPath: function () {
+            var path = this.currentPatch;
+            if (path == this.root) {
+                this.parentPatch = null;
+            } else {
+                var n = path.lastIndexOf('/');
+                if (n == (path.length - 1)) {
+                    path = path.slice(0, -1);
+                    n = path.lastIndexOf('/');
+                }
+                path = path.slice(0, n);
+                this.parentPatch = path;
+            }
         },
 
         // 设置文件夹列表展示
@@ -113,7 +139,6 @@
                 });
                 if (ret.status) {
                     var data = ret.data;
-                    this.allFileName = data;
                     return this.getAttribute(true, data);
                 } else {
                     toast.fail({
@@ -135,33 +160,45 @@
             }
         },
         // 点击文件
-        goto: function (name) {
-            if (this.isDir(name)) {
-                this.skip(this.getPath(name));
-            } else {
+        click: function (name) {
+            var path = this.getPath(name);
+            var type = this.isDir(path);
+            if (type) {
+                api.showProgress({
+                    title: '努力加载中...',
+                    text: '',
+                    modal: true
+                });
+                this.goto(path);
+            } else if (type === false) {
                 alert('文件');
+            } else {
+                alert('文件不存在');
             }
         },
-        // 跳转路径
-        skip: function (path) {
-            this.currentPatch = path + '/';
+        // 进入文件夹
+        goto: function (path) {
+            this.currentPatch = path+'/';
+            this.setParentPath();
+
             var el = $api.domAll('.file-item');
             for (var i = 0; i < el.length; i++) {
                 $api.remove(el[i]);
             }
             this.setList();
+            api.hideProgress();
         },
         /**
-         * 获取文件属性
+         * 获取文件属性|异步追加剩下的文件夹
          * @param sync 是否同步，默认false
-         * @param path 文件路径
+         * @param fileNames 要读文件名
          */
-        getAttribute: function (sync, path) {
+        getAttribute: function (sync, fileNames) {
             var fs = this.fs;
             if (sync) {
                 var file = {};
-                for (var i = 0; i < 10; i++) {
-                    var name = path[i];
+                for (var i = 0; i < fileNames.length; i++) {
+                    var name = fileNames[i];
                     var ret = fs.getAttributeSync({
                         path: this.getPath(name)
                     });
@@ -169,30 +206,35 @@
                         file[name] = this.addHtmlAttribute(ret.attribute);
                     }
                 }
-                Object.assign(this.allFile, file);
+//                Object.assign(this.allFile, file);
                 return file;
-            } else {
             }
         },
         // 拼接路径
         getPath: function (relativePath, absolutePath) {
             absolutePath = absolutePath ? absolutePath : this.currentPatch;
             if (relativePath == '..' || relativePath == '../') {
-                var n = absolutePath.lastIndexOf('/');
-                if (n == (absolutePath.length - 1)) {
-                    absolutePath = absolutePath.slice(0, -1);
-                    n = absolutePath.lastIndexOf('/');
-                }
-                var path = absolutePath.slice(0, n);
-            }else{
+                return this.parentPatch;
+            } else {
                 var path = absolutePath + relativePath;
             }
             return path;
         },
         // 是否为目录(只检测当前目录下已经查看属性的文件)
-        isDir: function (name) {
-            var info = this.allFile[name];
-            return (info && info.type == 'folder') || name == '../' || name == '..';
+        isDir: function (path) {
+            var fs = this.fs;
+            var ret = fs.existSync({
+                path: path
+            });
+            if (ret.exist) {
+                if (ret.directory) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                return null;
+            }
         },
         // 追加html用的属性
         addHtmlAttribute: function (file) {
